@@ -1,0 +1,3 @@
+Standalone Eventwatcher written in NodeJs
+
+This will provide discord webhooks about new events collected by [PogoInfo]<https://raw.githubusercontent.com/ccev/pogoinfo/v2/active/events.json>
