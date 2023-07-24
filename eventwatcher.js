@@ -1,7 +1,7 @@
 require('dotenv').config();
 const fs = require('fs');
 const fetch = require('node-fetch');
-const { WebhookClient, EmbedBuilder } = require('discord.js');
+const { WebhookClient } = require('discord.js');
 
 const WEBHOOK_URL = process.env.WEBHOOK_URL;
 const LOCAL_JSON_FILE = './events.json';
