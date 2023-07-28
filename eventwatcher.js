@@ -1,6 +1,7 @@
 require('dotenv').config();
 const fs = require('fs');
 const fetch = require('node-fetch');
+const cheerio = require('cheerio');
 const { WebhookClient } = require('discord.js');
 
 const WEBHOOK_URL = process.env.WEBHOOK_URL;
@@ -41,6 +42,19 @@ function formatDate(dateString) {
   return `${day}.${month}.${year} ${hours}:${minutes}`;
 }
 
+async function fetchDescriptionFromLink(link) {
+  try {
+    const response = await fetch(link);
+    const html = await response.text();
+    const $ = cheerio.load(html);
+    const eventDescription = $('.event-description').text().trim();
+    return eventDescription;
+  } catch (error) {
+    console.error('Error fetching event description:', error);
+    return 'No description provided';
+  }
+}
+
 
 async function checkAndSendEvents() {
   const eventData = await fetchEventData();
@@ -52,13 +66,14 @@ async function checkAndSendEvents() {
   for (const event of eventData) {
     const startHour = Math.floor(new Date(event.start).getTime() / HOUR_IN_MS);
     if (startHour === currentHour) {
-      sendMessageWithEmbed(event);
+      const description = await fetchDescriptionFromLink(event.link);
+      sendMessageWithEmbed({ ...event, description });
     }
   }
 }
 
 function sendMessageWithEmbed(event) {
-  const description = event.description || 'No description provided';
+  //const description = description || 'No description provided';
 
   // Create an array to store the bonuses if available
   const bonusesArray = [];
@@ -71,11 +86,10 @@ function sendMessageWithEmbed(event) {
   // Join the bonuses array to create the bonusesText
   const bonusesText = bonusesArray.length > 0 ? bonusesArray.join('\n') : 'No bonuses available';
 
-
     const embed = {
       title: event.name,
       url: event.link,
-      description: description,
+      description: event.description,
       fields: [
         { name: 'Type', value: event.heading},
         { name: 'Start Time', value: formatDate(event.start) },
