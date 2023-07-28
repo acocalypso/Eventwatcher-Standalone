@@ -57,6 +57,7 @@ async function fetchDescriptionFromLink(link) {
 
 
 async function checkAndSendEvents() {
+  console.log("Checking for events...");
   const eventData = await fetchEventData();
   if (!eventData) return;
 
@@ -117,7 +118,6 @@ function sendMessageWithEmbed(event) {
 }
 
 function scheduleHourlyCheck() {
-  console.log("Checking for active Events...")
   checkAndSendEvents();
   setInterval(checkAndSendEvents, HOUR_IN_MS);
 }
