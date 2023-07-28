@@ -12,5 +12,5 @@ Install guide:
 
 This script will check every hour if a new event is about to start and sents a webhook to discord.
 
-![test](https://github.com/acocalypso/Eventwatcher-Standalone/blob/f48772b19b370f5eb86dd76b9d4d97afb0e0889f/img/event.png)
+![test](https://github.com/acocalypso/Eventwatcher-Standalone/blob/4efbac1d04c86df8018bbbbb3eceb476ae742e93/img/event.png)
 
