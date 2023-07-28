@@ -73,9 +73,7 @@ async function checkAndSendEvents() {
 }
 
 function sendMessageWithEmbed(event) {
-  //const description = description || 'No description provided';
 
-  // Create an array to store the bonuses if available
   const bonusesArray = [];
   if (event.extraData && event.extraData.communityday && event.extraData.communityday.bonuses) {
     for (const bonus of event.extraData.communityday.bonuses) {
@@ -83,7 +81,6 @@ function sendMessageWithEmbed(event) {
     }
   }
 
-  // Join the bonuses array to create the bonusesText
   const bonusesText = bonusesArray.length > 0 ? bonusesArray.join('\n') : 'No bonuses available';
 
     const embed = {
@@ -120,6 +117,7 @@ function sendMessageWithEmbed(event) {
 }
 
 function scheduleHourlyCheck() {
+  console.log("Checking for active Events...")
   checkAndSendEvents();
   setInterval(checkAndSendEvents, HOUR_IN_MS);
 }
