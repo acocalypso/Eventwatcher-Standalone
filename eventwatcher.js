@@ -3,13 +3,39 @@ const fs = require('fs');
 const fetch = require('node-fetch');
 const cheerio = require('cheerio');
 const { WebhookClient } = require('discord.js');
+const TelegramBot = require('node-telegram-bot-api');
 
 const WEBHOOK_URL = process.env.WEBHOOK_URL;
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+const DESTINATION = process.env.DESTINATION || 'both'; // Default to 'both' if not provided
+
 const LOCAL_JSON_FILE = './events.json';
 const JSON_URL = 'https://raw.githubusercontent.com/bigfoott/ScrapedDuck/data/events.json';
 const HOUR_IN_MS = 60 * 60 * 1000;
 
 const webhookClient = new WebhookClient({ url: WEBHOOK_URL });
+const telegramBot = new TelegramBot(TELEGRAM_BOT_TOKEN);
+
+function sendToDiscord(payload) {
+  webhookClient.send(payload)
+    .catch((error) => {
+      console.error('Error sending message to Discord:', error);
+    });
+}
+
+function sendToTelegram(message) {
+  telegramBot.sendMessage(TELEGRAM_CHAT_ID, message)
+    .catch((error) => {
+      console.error('Error sending message to Telegram:', error);
+    });
+}
+
+function sendToBoth(payload, message) {
+  sendToDiscord(payload);
+  sendToTelegram(message);
+}
+
 
 async function fetchEventData() {
   try {
@@ -55,26 +81,7 @@ async function fetchDescriptionFromLink(link) {
   }
 }
 
-
-async function checkAndSendEvents() {
-  console.log("Checking for events...");
-  const eventData = await fetchEventData();
-  if (!eventData) return;
-
-  const currentTime = getCurrentTime();
-  const currentHour = Math.floor(currentTime / HOUR_IN_MS);
-
-  for (const event of eventData) {
-    const startHour = Math.floor(new Date(event.start).getTime() / HOUR_IN_MS);
-    if (startHour === currentHour) {
-      const description = await fetchDescriptionFromLink(event.link);
-      sendMessageWithEmbed({ ...event, description });
-    }
-  }
-}
-
-function sendMessageWithEmbed(event) {
-
+async function sendMessageWithEmbed(event) {
   const bonusesArray = [];
   if (event.extraData && event.extraData.communityday && event.extraData.communityday.bonuses) {
     for (const bonus of event.extraData.communityday.bonuses) {
@@ -111,10 +118,34 @@ function sendMessageWithEmbed(event) {
     embeds: [embed],
   };
 
-  webhookClient.send(payload)
-    .catch((error) => {
-      console.error('Error sending message:', error);
-    });
+  const message = `**${event.name}**\n\nType: ${event.heading}\nStart Time: ${formatDate(event.start)}\nEnd Time: ${formatDate(event.end)}\n\n${event.description}\n\nBonuses:\n\n${bonusesText}\Image: ${event.image}`;
+
+    if (DESTINATION === 'discord') {
+      sendToDiscord(payload);
+    } else if (DESTINATION === 'telegram') {
+      sendToTelegram(message);
+    } else if (DESTINATION === 'both') {
+      sendToBoth(payload, message);
+    } else {
+      console.error('Invalid DESTINATION value in .env file. Please set it to "discord", "telegram", or "both".');
+    }
+}
+
+async function checkAndSendEvents() {
+  console.log("Checking for events...");
+  const eventData = await fetchEventData();
+  if (!eventData) return;
+
+  const currentTime = getCurrentTime();
+  const currentHour = Math.floor(currentTime / HOUR_IN_MS);
+
+  for (const event of eventData) {
+    const startHour = Math.floor(new Date(event.start).getTime() / HOUR_IN_MS);
+    if (startHour === currentHour) {
+      const description = await fetchDescriptionFromLink(event.link);
+      sendMessageWithEmbed({ ...event, description });
+    }
+  }
 }
 
 function scheduleHourlyCheck() {
