@@ -9,13 +9,31 @@ const WEBHOOK_URL = process.env.WEBHOOK_URL;
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 const DESTINATION = process.env.DESTINATION || 'both'; // Default to 'both' if not provided
-
+const NOTIFIED_EVENTS_FILE = './notified_events.txt';
 const LOCAL_JSON_FILE = './events.json';
 const JSON_URL = 'https://raw.githubusercontent.com/bigfoott/ScrapedDuck/data/events.json';
 const HOUR_IN_MS = 60 * 60 * 1000;
 
 const webhookClient = new WebhookClient({ url: WEBHOOK_URL });
 const telegramBot = new TelegramBot(TELEGRAM_BOT_TOKEN);
+
+let notifiedEvents = new Set();
+
+function loadNotifiedEvents() {
+  try {
+    if (fs.existsSync(NOTIFIED_EVENTS_FILE)) {
+      const data = fs.readFileSync(NOTIFIED_EVENTS_FILE, 'utf8');
+      notifiedEvents = new Set(data.trim().split('\n'));
+    }
+  } catch (error) {
+    console.error('Error loading notified events:', error);
+  }
+}
+
+function saveNotifiedEvents() {
+  const data = Array.from(notifiedEvents).join('\n');
+  fs.writeFileSync(NOTIFIED_EVENTS_FILE, data, 'utf8');
+}
 
 function sendToDiscord(payload) {
   webhookClient.send(payload)
@@ -132,7 +150,7 @@ async function sendMessageWithEmbed(event) {
 }
 
 async function checkAndSendEvents() {
-  console.log("Checking for events...");
+  console.log('Checking for events...');
   const eventData = await fetchEventData();
   if (!eventData) return;
 
@@ -141,14 +159,19 @@ async function checkAndSendEvents() {
 
   for (const event of eventData) {
     const startHour = Math.floor(new Date(event.start).getTime() / HOUR_IN_MS);
-    if (startHour === currentHour) {
+    const endHour = Math.floor(new Date(event.end).getTime() / HOUR_IN_MS);
+
+    if (!notifiedEvents.has(event.name) && (startHour === currentHour || (startHour < currentHour && currentHour < endHour))) {
+      notifiedEvents.add(event.name);
       const description = await fetchDescriptionFromLink(event.link);
       sendMessageWithEmbed({ ...event, description });
     }
   }
+  saveNotifiedEvents();
 }
 
 function scheduleHourlyCheck() {
+  loadNotifiedEvents();
   checkAndSendEvents();
   setInterval(checkAndSendEvents, HOUR_IN_MS);
 }
