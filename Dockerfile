@@ -9,4 +9,4 @@ RUN  apk update \
   && apk add --no-cache nodejs npm \
   && npm install
 
-RUN node eventwatcher.js
+CMD node eventwatcher.js
