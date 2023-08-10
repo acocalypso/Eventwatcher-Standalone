@@ -1,6 +1,7 @@
 require('dotenv').config();
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 const fs = require('fs');
-const fetch = require('node-fetch');
+//const fetch = require('node-fetch');
 const cheerio = require('cheerio');
 const { WebhookClient } = require('discord.js');
 const TelegramBot = require('node-telegram-bot-api');
@@ -13,9 +14,6 @@ const NOTIFIED_EVENTS_FILE = './notified_events.txt';
 const LOCAL_JSON_FILE = './events.json';
 const JSON_URL = 'https://raw.githubusercontent.com/bigfoott/ScrapedDuck/data/events.json';
 const HOUR_IN_MS = 60 * 60 * 1000;
-
-const webhookClient = new WebhookClient({ url: WEBHOOK_URL });
-const telegramBot = new TelegramBot(TELEGRAM_BOT_TOKEN);
 
 let notifiedEvents = new Set();
 
@@ -36,6 +34,7 @@ function saveNotifiedEvents() {
 }
 
 function sendToDiscord(payload) {
+  const webhookClient = new WebhookClient({ url: WEBHOOK_URL });
   webhookClient.send(payload)
     .catch((error) => {
       console.error('Error sending message to Discord:', error);
@@ -43,6 +42,7 @@ function sendToDiscord(payload) {
 }
 
 function sendToTelegram(message) {
+  const telegramBot = new TelegramBot(TELEGRAM_BOT_TOKEN);
   telegramBot.sendMessage(TELEGRAM_CHAT_ID, message)
     .catch((error) => {
       console.error('Error sending message to Telegram:', error);
@@ -136,8 +136,9 @@ async function sendMessageWithEmbed(event) {
     embeds: [embed],
   };
 
-  const message = `**${event.name}**\n\nType: ${event.heading}\nStart Time: ${formatDate(event.start)}\nEnd Time: ${formatDate(event.end)}\n\n${event.description}\n\nBonuses:\n\n${bonusesText}\Image: ${event.image}`;
-
+  console.log("Sending Event: %s", event.heading);
+  
+  const message = `**${event.name}**\n\nType: ${event.heading}\nStart Time: ${formatDate(event.start)}\nEnd Time: ${formatDate(event.end)}\n\n${event.description}\n\nBonuses:\n\n${bonusesText}\n\nImage:\n${event.image}`;
     if (DESTINATION === 'discord') {
       sendToDiscord(payload);
     } else if (DESTINATION === 'telegram') {
