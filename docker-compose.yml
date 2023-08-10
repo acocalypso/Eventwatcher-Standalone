@@ -1,0 +1,12 @@
+version: '2.4'
+services:
+  eventwatcher:
+    container_name: eventwatcher
+    build: ./Eventwatcher-Standalone
+    tty: true
+    restart: always
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./Eventwatcher-Standalone/.env:/usr/src/app/.env
+    logging:
+      driver: none
