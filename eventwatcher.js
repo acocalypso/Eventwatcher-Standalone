@@ -13,7 +13,7 @@ const DESTINATION = process.env.DESTINATION || 'both'; // Default to 'both' if n
 const NOTIFIED_EVENTS_FILE = './notified_events.txt';
 const LOCAL_JSON_FILE = './events.json';
 const JSON_URL = 'https://raw.githubusercontent.com/bigfoott/ScrapedDuck/data/events.json';
-const HOUR_IN_MS = 60 * 60 * 1000;
+const checkInterval = 5 * 60 * 1000;
 
 let notifiedEvents = new Set();
 
@@ -186,7 +186,7 @@ async function checkAndSendEvents() {
 function scheduleHourlyCheck() {
   loadNotifiedEvents();
   checkAndSendEvents();
-  setInterval(checkAndSendEvents, HOUR_IN_MS);
+  setInterval(checkAndSendEvents, checkInterval);
 }
 
 scheduleHourlyCheck();
