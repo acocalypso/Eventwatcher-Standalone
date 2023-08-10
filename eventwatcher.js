@@ -6,7 +6,7 @@ const cheerio = require('cheerio');
 const { WebhookClient } = require('discord.js');
 const TelegramBot = require('node-telegram-bot-api');
 
-const WEBHOOK_URL = process.env.WEBHOOK_URL;
+const WEBHOOK_URL = process.env.WEBHOOK_URL.split(',');
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 const DESTINATION = process.env.DESTINATION || 'both'; // Default to 'both' if not provided
@@ -33,12 +33,22 @@ function saveNotifiedEvents() {
   fs.writeFileSync(NOTIFIED_EVENTS_FILE, data, 'utf8');
 }
 
-function sendToDiscord(payload) {
+/*function sendToDiscord(payload) {
   const webhookClient = new WebhookClient({ url: WEBHOOK_URL });
   webhookClient.send(payload)
     .catch((error) => {
       console.error('Error sending message to Discord:', error);
     });
+}*/
+
+function sendToDiscord(WEBHOOK_URL,payload) {
+  WEBHOOK_URL.forEach((url) =>{
+    const webhookClient = new WebhookClient({ url: url });
+    webhookClient.send(payload)
+      .catch((error) => {
+        console.error('Error sending message to Discord:', error);
+      });
+  });
 }
 
 function sendToTelegram(message) {
@@ -140,11 +150,13 @@ async function sendMessageWithEmbed(event) {
   
   const message = `**${event.name}**\n\nType: ${event.heading}\nStart Time: ${formatDate(event.start)}\nEnd Time: ${formatDate(event.end)}\n\n${event.description}\n\nBonuses:\n\n${bonusesText}\n\nImage:\n${event.image}`;
     if (DESTINATION === 'discord') {
-      sendToDiscord(payload);
+      sendToDiscord(WEBHOOK_URL,payload);
     } else if (DESTINATION === 'telegram') {
       sendToTelegram(message);
     } else if (DESTINATION === 'both') {
-      sendToBoth(payload, message);
+      //sendToBoth(payload, message);
+      sendToDiscord(WEBHOOK_URL,payload);
+      sendToTelegram(message);
     } else {
       console.error('Invalid DESTINATION value in .env file. Please set it to "discord", "telegram", or "both".');
     }
