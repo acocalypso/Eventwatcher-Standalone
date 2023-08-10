@@ -168,11 +168,11 @@ async function checkAndSendEvents() {
   if (!eventData) return;
 
   const currentTime = getCurrentTime();
-  const currentHour = Math.floor(currentTime / HOUR_IN_MS);
+  const currentHour = Math.floor(currentTime / checkInterval);
 
   for (const event of eventData) {
-    const startHour = Math.floor(new Date(event.start).getTime() / HOUR_IN_MS);
-    const endHour = Math.floor(new Date(event.end).getTime() / HOUR_IN_MS);
+    const startHour = Math.floor(new Date(event.start).getTime() / checkInterval);
+    const endHour = Math.floor(new Date(event.end).getTime() / checkInterval);
 
     if (!notifiedEvents.has(event.name) && (startHour === currentHour || (startHour < currentHour && currentHour < endHour))) {
       notifiedEvents.add(event.name);
@@ -183,10 +183,10 @@ async function checkAndSendEvents() {
   saveNotifiedEvents();
 }
 
-function scheduleHourlyCheck() {
+function scheduleCheck() {
   loadNotifiedEvents();
   checkAndSendEvents();
   setInterval(checkAndSendEvents, checkInterval);
 }
 
-scheduleHourlyCheck();
+scheduleCheck();
