@@ -3,4 +3,3 @@ events.json
 node_modules
 package-lock.json
 notified_events.txt
-docker-compose.yml
