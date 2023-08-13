@@ -1,9 +1,10 @@
 version: '3.5'
 services:
   eventwatchter:
-    image: ghcr.io/acocalypso/Eventwatcher-Standalone:main
+    image: ghcr.io/acocalypso/eventwatcher-standalone:main
     volumes:
       - .env:/usr/src/app/.env
       - /etc/localtime:/etc/localtime:ro
+      - logs/:/usr/src/app/logs
     security_opt:
       - no-new-privileges:true
