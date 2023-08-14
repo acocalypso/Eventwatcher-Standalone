@@ -1,10 +1,14 @@
-version: '3.5'
+version: '2.4'
 services:
-  eventwatchter:
+  eventwatcher:
+    container_name: eventwatcher
     image: ghcr.io/acocalypso/eventwatcher-standalone:main
+    restart: always
     volumes:
-      - ./.env:/usr/src/app/.env
       - /etc/localtime:/etc/localtime:ro
-      - ./logs/:/usr/src/app/logs
+      - ./Eventwatcher-Standalone/.env:/usr/src/app/.env
+      - ./Eventwatcher-Standalone/logs/:/usr/src/app/logs
     security_opt:
       - no-new-privileges:true
+    logging:
+      driver: none

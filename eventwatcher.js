@@ -1,7 +1,7 @@
 require('dotenv').config();
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 const fs = require('fs');
-//const fetch = require('node-fetch');
+const fetch = require('node-fetch-native');
 const cheerio = require('cheerio');
 const { WebhookClient } = require('discord.js');
 const TelegramBot = require('node-telegram-bot-api');
