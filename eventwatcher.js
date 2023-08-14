@@ -1,21 +1,19 @@
 require('dotenv').config();
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 const fs = require('fs');
 const fetch = require('node-fetch-native');
 const cheerio = require('cheerio');
 const { WebhookClient } = require('discord.js');
 const TelegramBot = require('node-telegram-bot-api');
 
-const WEBHOOK_URL = process.env.WEBHOOK_URL;
+const WEBHOOK_URL = process.env.WEBHOOK_URL.split(',');
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 const DESTINATION = process.env.DESTINATION || 'both'; // Default to 'both' if not provided
-const NOTIFIED_EVENTS_FILE = './notified_events.txt';
+const NOTIFIED_EVENTS_FILE = './logs/notified_events.txt';
 const LOCAL_JSON_FILE = './events.json';
 const JSON_URL = 'https://raw.githubusercontent.com/bigfoott/ScrapedDuck/data/events.json';
-const HOUR_IN_MS = 60 * 60 * 1000;
-
-const webhookClient = new WebhookClient({ url: WEBHOOK_URL });
-const telegramBot = new TelegramBot(TELEGRAM_BOT_TOKEN);
+const checkInterval = 5 * 60 * 1000;
 
 let notifiedEvents = new Set();
 
@@ -35,14 +33,26 @@ function saveNotifiedEvents() {
   fs.writeFileSync(NOTIFIED_EVENTS_FILE, data, 'utf8');
 }
 
-function sendToDiscord(payload) {
+/*function sendToDiscord(payload) {
+  const webhookClient = new WebhookClient({ url: WEBHOOK_URL });
   webhookClient.send(payload)
     .catch((error) => {
       console.error('Error sending message to Discord:', error);
     });
+}*/
+
+function sendToDiscord(WEBHOOK_URL,payload) {
+  WEBHOOK_URL.forEach((url) =>{
+    const webhookClient = new WebhookClient({ url: url });
+    webhookClient.send(payload)
+      .catch((error) => {
+        console.error('Error sending message to Discord:', error);
+      });
+  });
 }
 
 function sendToTelegram(message) {
+  const telegramBot = new TelegramBot(TELEGRAM_BOT_TOKEN);
   telegramBot.sendMessage(TELEGRAM_CHAT_ID, message)
     .catch((error) => {
       console.error('Error sending message to Telegram:', error);
@@ -136,14 +146,17 @@ async function sendMessageWithEmbed(event) {
     embeds: [embed],
   };
 
-  const message = `**${event.name}**\n\nType: ${event.heading}\nStart Time: ${formatDate(event.start)}\nEnd Time: ${formatDate(event.end)}\n\n${event.description}\n\nBonuses:\n\n${bonusesText}\Image: ${event.image}`;
-
+  console.log("Sending Event: %s", event.heading);
+  
+  const message = `**${event.name}**\n\nType: ${event.heading}\nStart Time: ${formatDate(event.start)}\nEnd Time: ${formatDate(event.end)}\n\n${event.description}\n\nBonuses:\n\n${bonusesText}\n\nImage:\n${event.image}`;
     if (DESTINATION === 'discord') {
-      sendToDiscord(payload);
+      sendToDiscord(WEBHOOK_URL,payload);
     } else if (DESTINATION === 'telegram') {
       sendToTelegram(message);
     } else if (DESTINATION === 'both') {
-      sendToBoth(payload, message);
+      //sendToBoth(payload, message);
+      sendToDiscord(WEBHOOK_URL,payload);
+      sendToTelegram(message);
     } else {
       console.error('Invalid DESTINATION value in .env file. Please set it to "discord", "telegram", or "both".');
     }
@@ -155,11 +168,11 @@ async function checkAndSendEvents() {
   if (!eventData) return;
 
   const currentTime = getCurrentTime();
-  const currentHour = Math.floor(currentTime / HOUR_IN_MS);
+  const currentHour = Math.floor(currentTime / checkInterval);
 
   for (const event of eventData) {
-    const startHour = Math.floor(new Date(event.start).getTime() / HOUR_IN_MS);
-    const endHour = Math.floor(new Date(event.end).getTime() / HOUR_IN_MS);
+    const startHour = Math.floor(new Date(event.start).getTime() / checkInterval);
+    const endHour = Math.floor(new Date(event.end).getTime() / checkInterval);
 
     if (!notifiedEvents.has(event.name) && (startHour === currentHour || (startHour < currentHour && currentHour < endHour))) {
       notifiedEvents.add(event.name);
@@ -170,10 +183,10 @@ async function checkAndSendEvents() {
   saveNotifiedEvents();
 }
 
-function scheduleHourlyCheck() {
+function scheduleCheck() {
   loadNotifiedEvents();
   checkAndSendEvents();
-  setInterval(checkAndSendEvents, HOUR_IN_MS);
+  setInterval(checkAndSendEvents, checkInterval);
 }
 
-scheduleHourlyCheck();
+scheduleCheck();

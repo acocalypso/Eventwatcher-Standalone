@@ -2,11 +2,13 @@ version: '2.4'
 services:
   eventwatcher:
     container_name: eventwatcher
-    build: ./Eventwatcher-Standalone
-    tty: true
+    image: ghcr.io/acocalypso/eventwatcher-standalone:main
     restart: always
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ./Eventwatcher-Standalone/.env:/usr/src/app/.env
+      - ./Eventwatcher-Standalone/logs/:/usr/src/app/logs
+    security_opt:
+      - no-new-privileges:true
     logging:
       driver: none
