@@ -2,7 +2,7 @@ version: '2.4'
 services:
   eventwatcher:
     container_name: eventwatcher
-    image: ghcr.io/reuschelcgn/eventwatcher-standalone:main
+    image: ghcr.io/reuschelcgn/eventwatcher-standalone:develop
     restart: always
     volumes:
       - /etc/localtime:/etc/localtime:ro
