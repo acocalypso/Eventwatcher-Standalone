@@ -1,5 +1,4 @@
 require('dotenv').config();
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 const fs = require('fs');
 const fetch = require('node-fetch-native');
 const cheerio = require('cheerio');
