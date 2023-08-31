@@ -12,7 +12,7 @@ const DESTINATION = process.env.DESTINATION || 'both'; // Default to 'both' if n
 const NOTIFIED_EVENTS_FILE = './logs/notified_events.txt';
 const LOCAL_JSON_FILE = './events.json';
 const JSON_URL = 'https://raw.githubusercontent.com/bigfoott/ScrapedDuck/data/events.json';
-const checkInterval = 5 * 60 * 1000;
+const checkInterval = parseInt(process.env.CHECK_INTERVAL) || 300000;
 
 let notifiedEvents = new Set();
 
