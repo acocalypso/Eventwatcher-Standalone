@@ -102,11 +102,54 @@ async function fetchDescriptionFromLink(link) {
     const html = await response.text();
     const $ = cheerio.load(html);
     const eventDescription = $('.event-description').text().trim();
-    return eventDescription;
+    const formattedDescription = await formatEventDescription(eventDescription);
+    return formattedDescription;
   } catch (error) {
     console.error('Error fetching event description:', error);
     return 'No description provided';
   }
+}
+
+
+async function formatEventDescription(description) {
+  // Split the text into lines
+  const lines = description.split('\n');
+  
+  // Initialize an empty result array to hold formatted lines
+  const formattedLines = [];
+
+  // Initialize a stack to keep track of the current indentation level
+  //const indentStack = [];
+  
+  // Process each line
+  for (let i = 0; i < lines.length; i++) {
+    const currentLine = lines[i].trim();
+    const indentation = lines[i].length - currentLine.length;
+
+    // Check if next line is empty
+    const nextLine = i < lines.length -1 ? lines[i + 1].trim() : '';
+    
+    // Initialize bulletPoint
+    let bulletPoint = '';
+    
+    // Add the current line with the appropriate bullet point
+    if (indentation > 2) {
+      bulletPoint = '* ';
+      formattedLines.push(bulletPoint + currentLine);
+    } else if (currentLine) {
+      formattedLines.push(bulletPoint + currentLine);
+    }
+
+    if (nextLine === '' && currentLine && i < lines.length - 1) {
+      formattedLines.push('');
+    }
+
+  }
+  
+  // Join the formatted lines back together with line breaks
+  const formattedDescription = formattedLines.join('\n');
+  
+  return formattedDescription;
 }
 
 async function sendMessageWithEmbed(event) {
