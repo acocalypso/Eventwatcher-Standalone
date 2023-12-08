@@ -33,14 +33,6 @@ function saveNotifiedEvents() {
   fs.writeFileSync(NOTIFIED_EVENTS_FILE, data, 'utf8');
 }
 
-/*function sendToDiscord(payload) {
-  const webhookClient = new WebhookClient({ url: WEBHOOK_URL });
-  webhookClient.send(payload)
-    .catch((error) => {
-      console.error('Error sending message to Discord:', error);
-    });
-}*/
-
 function sendToDiscord(WEBHOOK_URL,payload) {
   WEBHOOK_URL.forEach((url) =>{
     const webhookClient = new WebhookClient({ url: url });
@@ -59,28 +51,18 @@ function sendToTelegram(message) {
     });
 }
 
-function sendToBoth(payload, message) {
-  sendToDiscord(payload);
-  sendToTelegram(message);
-}
-
-
 async function fetchEventData() {
   try {
-    if (fs.existsSync(LOCAL_JSON_FILE)) {
-      const localData = fs.readFileSync(LOCAL_JSON_FILE, 'utf8');
-      return JSON.parse(localData);
-    } else {
-      const response = await fetch(JSON_URL);
-      const remoteData = await response.json();
-      fs.writeFileSync(LOCAL_JSON_FILE, JSON.stringify(remoteData, null, 2), 'utf8');
-      return remoteData;
-    }
+    const response = await fetch(JSON_URL);
+    const remoteData = await response.json();
+    fs.writeFileSync(LOCAL_JSON_FILE, JSON.stringify(remoteData, null, 2), 'utf8');
+    return remoteData;
   } catch (error) {
     console.error('Error fetching event data:', error);
     return null;
   }
 }
+
 
 function getCurrentTime() {
   return new Date().getTime();
@@ -197,7 +179,6 @@ async function sendMessageWithEmbed(event) {
     } else if (DESTINATION === 'telegram') {
       sendToTelegram(message);
     } else if (DESTINATION === 'both') {
-      //sendToBoth(payload, message);
       sendToDiscord(WEBHOOK_URL,payload);
       sendToTelegram(message);
     } else {
