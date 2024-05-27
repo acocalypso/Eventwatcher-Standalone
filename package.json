@@ -4,6 +4,6 @@
     "discord.js": "^14.11.0",
     "dotenv": "^16.3.1",
     "node-fetch": "^3.3.2",
-    "node-telegram-bot-api": "^0.64.0"
+    "node-telegram-bot-api": "^0.66.0"
   }
 }
