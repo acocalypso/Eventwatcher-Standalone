@@ -32,14 +32,6 @@ function saveNotifiedEvents() {
   fs.writeFileSync(NOTIFIED_EVENTS_FILE, data, 'utf8');
 }
 
-/*function sendToDiscord(payload) {
-  const webhookClient = new WebhookClient({ url: WEBHOOK_URL });
-  webhookClient.send(payload)
-    .catch((error) => {
-      console.error('Error sending message to Discord:', error);
-    });
-}*/
-
 function sendToDiscord(WEBHOOK_URL,payload) {
   WEBHOOK_URL.forEach((url) =>{
     const webhookClient = new WebhookClient({ url: url });
@@ -58,28 +50,18 @@ function sendToTelegram(message) {
     });
 }
 
-function sendToBoth(payload, message) {
-  sendToDiscord(payload);
-  sendToTelegram(message);
-}
-
-
 async function fetchEventData() {
   try {
-    if (fs.existsSync(LOCAL_JSON_FILE)) {
-      const localData = fs.readFileSync(LOCAL_JSON_FILE, 'utf8');
-      return JSON.parse(localData);
-    } else {
-      const response = await fetch(JSON_URL);
-      const remoteData = await response.json();
-      fs.writeFileSync(LOCAL_JSON_FILE, JSON.stringify(remoteData, null, 2), 'utf8');
-      return remoteData;
-    }
+    const response = await fetch(JSON_URL);
+    const remoteData = await response.json();
+    fs.writeFileSync(LOCAL_JSON_FILE, JSON.stringify(remoteData, null, 2), 'utf8');
+    return remoteData;
   } catch (error) {
     console.error('Error fetching event data:', error);
     return null;
   }
 }
+
 
 function getCurrentTime() {
   return new Date().getTime();
@@ -101,11 +83,54 @@ async function fetchDescriptionFromLink(link) {
     const html = await response.text();
     const $ = cheerio.load(html);
     const eventDescription = $('.event-description').text().trim();
-    return eventDescription;
+    const formattedDescription = await formatEventDescription(eventDescription);
+    return formattedDescription;
   } catch (error) {
     console.error('Error fetching event description:', error);
     return 'No description provided';
   }
+}
+
+
+async function formatEventDescription(description) {
+  // Split the text into lines
+  const lines = description.split('\n');
+  
+  // Initialize an empty result array to hold formatted lines
+  const formattedLines = [];
+
+  // Initialize a stack to keep track of the current indentation level
+  //const indentStack = [];
+  
+  // Process each line
+  for (let i = 0; i < lines.length; i++) {
+    const currentLine = lines[i].trim();
+    const indentation = lines[i].length - currentLine.length;
+
+    // Check if next line is empty
+    const nextLine = i < lines.length -1 ? lines[i + 1].trim() : '';
+    
+    // Initialize bulletPoint
+    let bulletPoint = '';
+    
+    // Add the current line with the appropriate bullet point
+    if (indentation > 2) {
+      bulletPoint = '* ';
+      formattedLines.push(bulletPoint + currentLine);
+    } else if (currentLine) {
+      formattedLines.push(bulletPoint + currentLine);
+    }
+
+    if (nextLine === '' && currentLine && i < lines.length - 1) {
+      formattedLines.push('');
+    }
+
+  }
+  
+  // Join the formatted lines back together with line breaks
+  const formattedDescription = formattedLines.join('\n');
+  
+  return formattedDescription;
 }
 
 async function sendMessageWithEmbed(event) {
@@ -153,7 +178,6 @@ async function sendMessageWithEmbed(event) {
     } else if (DESTINATION === 'telegram') {
       sendToTelegram(message);
     } else if (DESTINATION === 'both') {
-      //sendToBoth(payload, message);
       sendToDiscord(WEBHOOK_URL,payload);
       sendToTelegram(message);
     } else {
